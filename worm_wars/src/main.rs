@@ -21,62 +21,68 @@ struct SimData {
 
 impl SimData {
     fn new() -> SimData {
-        return SimData {
+
+        // return
+        SimData {
             popSeed: 0,
             S: 0, I: 0, R: 0,
             sToI: 0.0, iToR: 0.0, sToR: 0.0,
             updateRates: HashMap::new(),
-        };
+        }
+    }
+
+    fn parse_conditions(&mut self, st: &str) {
+        let mut initConditions = st.split_whitespace();
+
+        self.popSeed = initConditions.next().unwrap().parse().unwrap();
+        self.I = initConditions.next().unwrap().parse().unwrap();
+        self.sToI = initConditions.next().unwrap().parse().unwrap();
+        self.iToR = initConditions.next().unwrap().parse().unwrap();
+        self.sToR = initConditions.next().unwrap().parse().unwrap();
+        self.S = self.popSeed as i32 - self.I;
     }
 }
 
+
 fn main() {
     let mut simData = SimData::new();
-    let totalGenerations: u32;
     let inputFile = File::open("simConditions.txt").unwrap();
     let mut inputFile = BufReader::new(&inputFile);
 
     // Get total generations
-    let mut temp = String::new();
-    inputFile.read_line(&mut temp);
-    temp = (&temp[..]).trim().to_string();
-    totalGenerations = temp.to_string().parse::<i32>().unwrap() as u32;
+    // Thanks to /u/svgwrk for this syntax
+    let totalGenerations: u32 = {
+        let mut temp = String::new();
+        let _ = inputFile.read_line(&mut temp);
+
+        // return
+        temp.trim().parse().unwrap()
+    };
 
 
     // Setup initial conditions
     let mut initConditions = String::new();
-    inputFile.read_line(&mut initConditions);
-    let mut initConditions = initConditions.split_whitespace();
-
-    // There must be a better way to do this part... :(
-    simData.popSeed = initConditions.next().unwrap().parse::<u32>().unwrap();
-    simData.I = initConditions.next().unwrap().parse::<i32>().unwrap();
-    simData.sToI = initConditions.next().unwrap().parse::<f32>().unwrap();
-    simData.iToR = initConditions.next().unwrap().parse::<f32>().unwrap();
-    simData.sToR = initConditions.next().unwrap().parse::<f32>().unwrap();
-    simData.S = simData.popSeed as i32 - simData.I;
+    let _ = inputFile.read_line(&mut initConditions);
+    simData.parse_conditions(&initConditions);
 
 
     // Add updated rates
-    let mut temp = String::new();
     for line in inputFile.lines() {
-        temp = line.unwrap();
-        let mut line = temp.split_whitespace();
+        let line = line.unwrap();
+        let mut line = line.split_whitespace();
 
         // Dear lord this is ugly
-        simData.updateRates.insert(line.next().unwrap().parse::<u32>().unwrap(), 
-        (line.next().unwrap().parse::<f32>().unwrap(), line.next().unwrap().parse::<f32>().unwrap(), 
-         line.next().unwrap().parse::<f32>().unwrap()));
+        simData.updateRates.insert(line.next().unwrap().parse().unwrap(), 
+        (line.next().unwrap().parse().unwrap(), line.next().unwrap().parse().unwrap(), 
+         line.next().unwrap().parse().unwrap()));
     }
 
     
     // The actual sim, starting with/reporting 0-day.
     for gen in 0..(totalGenerations + 1) {
-        println!("Generation {}:\n  S: {}, I: {}, R: {}", gen, simData.S.to_string(), simData.I.to_string(), simData.R.to_string());
+        println!("Generation {}:\n  S: {}, I: {}, R: {}", gen, simData.S, simData.I, simData.R);
         
-        if simData.updateRates.contains_key(&gen) {
-            let (newSToI, newIToR, newSToR) = simData.updateRates[&gen];
-
+        if let Some(&(newSToI, newIToR, newSToR)) = simData.updateRates.get(&gen) {
             simData.sToI = newSToI;
             simData.iToR = newIToR;
             simData.sToR = newSToR;
