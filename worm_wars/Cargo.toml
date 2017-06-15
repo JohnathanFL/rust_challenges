@@ -1,0 +1,6 @@
+[package]
+name = "worm_wars"
+version = "0.1.0"
+authors = ["oakenbow <jfl747076@gmail.com>"]
+
+[dependencies]
